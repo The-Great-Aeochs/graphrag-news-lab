@@ -1,0 +1,27 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+*.egg-info/
+
+# Secrets
+.env
+
+# Raw + derived corpus text (regenerable via download_data.sh + ingest/subset.py).
+# Kept out of git to avoid redistributing full news-article bodies.
+data/raw/
+data/subset/
+input/
+
+# Pipeline artifacts (regenerable)
+output/
+cache/
+logs/
+.chroma/
+
+# Eval runs
+eval/results/*.json
+eval/results/*.csv
+
+# OS
+.DS_Store

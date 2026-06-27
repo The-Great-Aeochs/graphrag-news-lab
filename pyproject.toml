@@ -1,0 +1,18 @@
+[project]
+name = "graphrag-news-lab"
+version = "0.1.0"
+description = "A GraphRAG showcase on the MultiHop-RAG news corpus: global + local search vs a plain RAG baseline, with a ground-truth eval harness."
+requires-python = ">=3.10,<3.13"
+dependencies = [
+    "graphrag>=2.1.0",
+    "openai>=1.40.0",
+    "chromadb>=0.5.0",
+    "gradio>=4.44.0",
+    "python-dotenv>=1.0.1",
+    "pandas>=2.2.0",
+    "tiktoken>=0.7.0",
+    "tenacity>=8.5.0",
+]
+
+[tool.setuptools]
+py-modules = []
