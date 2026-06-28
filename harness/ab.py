@@ -7,6 +7,7 @@ doesn't break the others.
 
 from __future__ import annotations
 
+import re
 from dataclasses import asdict, dataclass
 
 
@@ -16,27 +17,64 @@ class RouteOutput:
     response: str
     retrieved_doc_ids: list[str]
     error: str | None = None
+    trace: str = ""  # human-readable, route-native retrieval trace (markdown)
 
 
 def _plain(query: str) -> RouteOutput:
     from baseline.plain_rag import PlainRAG
 
     r = PlainRAG().answer(query)
-    return RouteOutput("plain", r.response, r.retrieved_doc_ids)
+    seen, lines = set(), []
+    for c in r.retrieved_chunks:  # what plain RAG actually retrieves: text chunks
+        if c["title"] not in seen:
+            seen.add(c["title"])
+            lines.append(f"- {c['title']} — *{c['source']}*")
+    trace = f"**📄 Retrieved chunks** (top-{len(seen)} by cosine):\n" + "\n".join(lines)
+    return RouteOutput("plain", r.response, r.retrieved_doc_ids, trace=trace)
 
 
 def _global(query: str) -> RouteOutput:
     from graphrag_app.query import graph_global
 
     r = graph_global(query)
-    return RouteOutput("graphrag_global", r.response, r.retrieved_doc_ids)
+    n_considered = len(r.trace.get("reports", []))
+    # The reports the answer actually drew on are cited inline as [Data: Reports (2, 6, ..)].
+    by_id = r.trace.get("reports_by_id", {})
+    groups = re.findall(r"Reports?\s*\(([^)]*)\)", r.response)
+    cited_ids = set(re.findall(r"\d+", " ".join(groups)))
+    used = sorted({by_id[i] for i in cited_ids if i in by_id})
+    if used:
+        body = "\n".join(f"  - {x}" for x in used)
+        detail = f"**Community reports the answer cited ({len(used)})**:\n{body}"
+    else:
+        body = "\n".join(f"  - {x}" for x in r.trace.get("reports", [])[:10])
+        detail = f"**Top community reports by centrality:**\n{body}"
+    trace = (
+        f"**🌐 Map-reduce over {n_considered} community reports** — global search reads "
+        f"*summaries*, not documents.\n\n{detail}"
+    )
+    return RouteOutput("graphrag_global", r.response, r.retrieved_doc_ids, trace=trace)
 
 
 def _local(query: str) -> RouteOutput:
     from graphrag_app.query import graph_local
 
     r = graph_local(query)
-    return RouteOutput("graphrag_local", r.response, r.retrieved_doc_ids)
+    t = r.trace
+    ents = t.get("entities", [])
+    rels = t.get("relationships", [])
+    reps = t.get("reports", [])
+    rel_sample = "; ".join(f"{s} → {tg}" for s, tg in rels[:6])
+    rep_lines = "\n".join(f"  - {x}" for x in reps)
+    trace = (
+        f"**🔵 Entities in one-hop neighbourhood ({len(ents)})**: {', '.join(ents[:12])}"
+        f"{' …' if len(ents) > 12 else ''}\n\n"
+        f"**↔ Relationships traversed ({len(rels)})**: {rel_sample}"
+        f"{' …' if len(rels) > 6 else ''}\n\n"
+        f"**📄 Community reports ({len(reps)})**:\n{rep_lines}\n\n"
+        f"**📑 Source passages pulled**: {t.get('sources', 0)}"
+    )
+    return RouteOutput("graphrag_local", r.response, r.retrieved_doc_ids, trace=trace)
 
 
 _ROUTES = {"plain": _plain, "graphrag_global": _global, "graphrag_local": _local}

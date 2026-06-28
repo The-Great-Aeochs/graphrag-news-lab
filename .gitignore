@@ -18,6 +18,11 @@ output/
 cache/
 logs/
 .chroma/
+logs_*.txt
+
+# Generated visualizations (viz/show_community.py regenerates these)
+viz/*.html
+lib/
 
 # Eval runs
 eval/results/*.json

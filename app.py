@@ -36,8 +36,7 @@ ROUTE_TITLES = {
 def _format_trace(out) -> str:
     if out.error:
         return f"**⚠️ {out.error}**\n\n(Has the index been built? See README.)"
-    ids = ", ".join(out.retrieved_doc_ids) if out.retrieved_doc_ids else "_(none surfaced)_"
-    return f"**Retrieved / referenced docs:** {ids}"
+    return out.trace or "_(no trace)_"
 
 
 def run_one(query: str, route: str):

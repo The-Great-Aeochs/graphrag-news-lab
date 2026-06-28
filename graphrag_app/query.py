@@ -30,6 +30,34 @@ class GraphResult:
     response: str
     retrieved_doc_ids: list[str]
     context: dict = field(default_factory=dict)
+    trace: dict = field(default_factory=dict)
+
+
+def _extract_trace(context: dict) -> dict:
+    """Pull each route's *native* retrieval units out of the context object.
+
+    GraphRAG doesn't retrieve documents -- it returns entities, relationships,
+    community reports, and source text units. This surfaces them so the UI can
+    show what the route actually used, instead of an empty doc-id list."""
+    t: dict = {}
+    df = context.get("entities")
+    if isinstance(df, pd.DataFrame) and len(df):
+        col = "entity" if "entity" in df.columns else "title"
+        t["entities"] = [str(x) for x in df[col].tolist()]
+    df = context.get("relationships")
+    if isinstance(df, pd.DataFrame) and len(df):
+        t["relationships"] = [(str(r["source"]), str(r["target"])) for _, r in df.iterrows()]
+    df = context.get("reports")
+    if isinstance(df, pd.DataFrame) and len(df):
+        sort_col = next((c for c in ("occurrence weight", "rank") if c in df.columns), None)
+        d = df.sort_values(sort_col, ascending=False) if sort_col else df
+        t["reports"] = [str(x) for x in d["title"].tolist()]
+        if "id" in df.columns:  # map id -> title so we can resolve inline [Data: Reports (..)]
+            t["reports_by_id"] = {str(i): str(tt) for i, tt in zip(df["id"], df["title"])}
+    df = context.get("sources")
+    if isinstance(df, pd.DataFrame):
+        t["sources"] = len(df)
+    return t
 
 
 @lru_cache(maxsize=1)
@@ -84,7 +112,8 @@ def graph_global(query: str, response_type: str = "multiple paragraphs") -> Grap
             query=query,
         )
     )
-    return GraphResult(str(response), _doc_ids_from_context(context), context)
+    return GraphResult(str(response), _doc_ids_from_context(context), context,
+                       _extract_trace(context))
 
 
 def graph_local(query: str, response_type: str = "multiple paragraphs") -> GraphResult:
@@ -104,4 +133,5 @@ def graph_local(query: str, response_type: str = "multiple paragraphs") -> Graph
             query=query,
         )
     )
-    return GraphResult(str(response), _doc_ids_from_context(context), context)
+    return GraphResult(str(response), _doc_ids_from_context(context), context,
+                       _extract_trace(context))
