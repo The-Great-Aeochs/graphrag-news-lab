@@ -20,7 +20,6 @@ embedding_models:
   default_embedding_model:
     model_provider: openai
     # text-embedding-3-small is shared with the plain-RAG baseline so the A/B
-    # comparison is honest -- same vectors, only the architecture differs.
     model: text-embedding-3-small
     auth_method: api_key
     api_key: ${GRAPHRAG_API_KEY}

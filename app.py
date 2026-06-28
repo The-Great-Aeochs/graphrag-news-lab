@@ -21,6 +21,7 @@ EXAMPLES = [
     "What are the main themes and storylines across this news corpus?",  # global / sensemaking
     "What are the biggest narratives in AI this period and who are the key players?",  # global
     "Who is Sam Bankman-Fried and what is he connected to?",  # local / entity-centric
+    "Who is Sam Altman and who are his key associates at OpenAI?",  # local (maps to community 223)
     "How is OpenAI connected to other companies and people in the news?",  # local
     "Which companies are mentioned alongside both layoffs and AI investments?",  # multi-hop-ish
     "What did the CEO of Acme Robotics say about quarterly earnings?",  # null / should abstain

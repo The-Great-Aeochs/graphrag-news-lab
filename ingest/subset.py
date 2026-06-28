@@ -9,7 +9,7 @@ tokens, so we iterate on a coherent subset first.
 We keep the **technology** category only: it carries the richest narrative for a
 GraphRAG demo (AI labs, the FTX/crypto saga, Big Tech moves) and the densest
 web of shared entities -- exactly what makes global sensemaking and entity-centric
-local search shine.
+local search work.
 
 To preserve as many *intact* multi-hop QA pairs as possible, we rank tech
 articles by how often the QA evidence references them and keep the top N. A QA
